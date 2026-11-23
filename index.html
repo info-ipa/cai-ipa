@@ -171,27 +171,6 @@
     .btn-action.ready:hover {
       background: #15692d;
     }
-
-    /* ===== Thanh copy ẩn ở đáy: xám trơn, không chữ ===== */
-    .copy-bar {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 50px;
-      background: #d0d7de;
-      cursor: pointer;
-      box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.12);
-      transform: translateY(100%);
-      transition: transform 0.25s ease, background-color 0.25s ease;
-      z-index: 999;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .copy-bar.show { transform: translateY(0); }
-    .copy-bar:hover { background: #c2cad2; }
-    .copy-bar.copied { background: #1a7f37; }
-    body.bar-open { padding-bottom: 66px; }
   </style>
 </head>
 <body>
@@ -234,8 +213,6 @@
     </div>
   </div>
 
-  <div class="copy-bar" id="copyBar" role="button" tabindex="0" aria-label="Copy link plist"></div>
-
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/plist@3.0.6/dist/plist.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bplist-parser@0.3.2/dist/bplist-parser.min.js"></script>
@@ -247,66 +224,12 @@
     const DEFAULT_IMAGE_URL = "https://raw.githubusercontent.com/nhut990/files/refs/heads/main/hinh/logo_minhnhut.PNG";
 
     let builtInstallUrl = "";
-    let builtPlistUrl = "";
 
     const ipaInput = document.getElementById("ipaUrl");
     const btnClearIpa = document.getElementById("btnClearIpa");
     const minOsGroup = document.getElementById("minOsGroup");
     const minOsInput = document.getElementById("minOs");
     const minOsHint = document.getElementById("minOsHint");
-
-    const copyBar = document.getElementById("copyBar");
-    let copyBarResetTimer = null;
-
-    function showCopyBar() {
-      document.body.classList.add("bar-open");
-      copyBar.classList.add("show");
-      copyBar.classList.remove("copied");
-    }
-
-    function hideCopyBar() {
-      copyBar.classList.remove("show", "copied");
-      document.body.classList.remove("bar-open");
-      if (copyBarResetTimer) {
-        clearTimeout(copyBarResetTimer);
-        copyBarResetTimer = null;
-      }
-    }
-
-    async function copyToClipboard(text) {
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(text);
-          return true;
-        }
-      } catch (_) {}
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        ta.style.pointerEvents = "none";
-        document.body.appendChild(ta);
-        ta.select();
-        const ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-        return ok;
-      } catch (_) {
-        return false;
-      }
-    }
-
-    copyBar.addEventListener("click", async () => {
-      if (!builtPlistUrl) return;
-      const ok = await copyToClipboard(builtPlistUrl);
-      if (ok) {
-        copyBar.classList.add("copied");
-        if (copyBarResetTimer) clearTimeout(copyBarResetTimer);
-        copyBarResetTimer = setTimeout(() => {
-          copyBar.classList.remove("copied");
-        }, 1500);
-      }
-    });
 
     function updateMinOsHint() {
       const val = minOsInput.value.trim();
@@ -347,11 +270,9 @@
 
     function resetInstallState() {
       builtInstallUrl = "";
-      builtPlistUrl = "";
       const btn = document.getElementById("btnCreateInstall");
       btn.textContent = "Tạo Liên Kết Cài Đặt";
       btn.classList.remove("ready");
-      hideCopyBar();
     }
 
     btnClearIpa.addEventListener("click", () => {
@@ -685,7 +606,6 @@
       if (title) params.set("title", title);
 
       const plistUrl = `${WORKER_PLIST}?${params.toString()}`;
-      builtPlistUrl = plistUrl;
       builtInstallUrl = `itms-services://?action=download-manifest&url=${encodeURIComponent(plistUrl)}`;
 
       const labelParts = ["Cài Đặt"];
@@ -694,7 +614,6 @@
       btn.textContent = labelParts.join(" ");
       btn.classList.add("ready");
       setStatus("Đã tạo liên kết cài đặt. Nhấn nút bên dưới để cài đặt.", "ok");
-      showCopyBar();
     });
 
     ["title", "bundleId", "version"].forEach((id) => {
